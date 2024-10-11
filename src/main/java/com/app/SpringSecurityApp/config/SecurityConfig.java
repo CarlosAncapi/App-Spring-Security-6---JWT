@@ -1,6 +1,9 @@
 package com.app.SpringSecurityApp.config;
 
+import com.app.SpringSecurityApp.filter.JwtTokenValidator;
 import com.app.SpringSecurityApp.services.UserDetailsServiceImpl;
+import com.app.SpringSecurityApp.util.JwtUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import java.sql.SQLOutput;
 
@@ -24,6 +28,9 @@ import java.sql.SQLOutput;
 @EnableWebSecurity
 @EnableMethodSecurity // me permite trabajar con anotaciones de Spring Security
 public class SecurityConfig {
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     // Para agregar seguridad a mi proyecto necesito una cadena de filtros de seguridad (SecurityFilterChain)
     // Para agregar seguridad a mi proyecto necesito una cadena de filtros de seguridad (SecurityFilterChain)
@@ -47,6 +54,7 @@ public class SecurityConfig {
                     // http.anyRequest().authenticated(); // cualquier usuario que esté autenticado ( que tenga usuario y contraseña correctas ) podrá acceder a cualquier otro endpoint que no esté especificado en las configuraciones de arriba.
                     http.anyRequest().denyAll(); // se le denegará el permiso a cualquier otro endpoint a cualquier usuario o personas sin usuarios (no logueadas)
                 })
+                .addFilterBefore(new JwtTokenValidator(jwtUtils), BasicAuthenticationFilter.class) // se necesita que este filtro se realice antes del filtro autenticacion o simepre se recharaza la autenticacion antes de verificar el token (before = antes)
                 .build();
     }
 
