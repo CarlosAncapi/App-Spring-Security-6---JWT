@@ -4,7 +4,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/method")
 //@PreAuthorize("denyAll()") // por defecto no dejará pasar a nadie a menos que yo se lo indique, aunque tenga usuario y contraseña
 public class testAuthController {
 

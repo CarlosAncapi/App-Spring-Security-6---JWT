@@ -1,14 +1,22 @@
 package com.app.SpringSecurityApp.services;
 
 
+import com.app.SpringSecurityApp.controllers.dtos.AuthLoginRequest;
+import com.app.SpringSecurityApp.controllers.dtos.AuthResponse;
 import com.app.SpringSecurityApp.persistence.entities.UserEntity;
 import com.app.SpringSecurityApp.persistence.repositories.UserRepository;
+import com.app.SpringSecurityApp.util.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -16,6 +24,12 @@ import java.util.List;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService { // esta clase se encargara de llamar al repositorio para buscar el usuario en la base de datos
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     @Autowired
     private UserRepository userRepository;
@@ -55,4 +69,31 @@ public class UserDetailsServiceImpl implements UserDetailsService { // esta clas
                 userEntity.isAccountNoLocked(),
                 authorityList);
     }
+
+    public AuthResponse loginUser (AuthLoginRequest authLoginRequest){
+        String username = authLoginRequest.username();
+        String password = authLoginRequest.password();
+
+        Authentication authentication = this.authenticate(username, password);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        String accessToken = jwtUtils.createToken(authentication);
+
+        AuthResponse authResponse = new AuthResponse(username, "User loged succesfuly", accessToken, true);
+        return authResponse;
+    }
+
+    public Authentication authenticate(String username, String password){
+        UserDetails userDetails = this.loadUserByUsername(username);
+
+        if(userDetails == null){
+            throw new BadCredentialsException("Invalid username or password.");
+        }
+
+        if(!passwordEncoder.matches(password, userDetails.getPassword())){
+            throw new BadCredentialsException("Invalid password.");
+        }
+        return  new UsernamePasswordAuthenticationToken(username, password, userDetails.getAuthorities());
+    }
+
 }
